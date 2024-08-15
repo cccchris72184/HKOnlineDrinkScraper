@@ -256,7 +256,6 @@ for product_info in total_product_info_list:
     })
 
 pns_df = pd.DataFrame(product_data)
-
 # data cleaning process inside the dataframe
 pns_df['country'] = pns_df['country'].apply(data_cleaning_country_for_df)
 pns_df['rating'] = pns_df['rating'].astype(float)
@@ -270,16 +269,6 @@ pns_df['date'] =  pd.to_datetime(today_date)
 pns_df.to_csv('pns_df{today_date}.csv', index=False)
 
 # start loading data into database
-conn = psycopg2.connect(
-    host = 'Localhost',
-    dbname = 'demo_test',
-    user = 'postgres',
-    password = '',
-    port = 5432
-)
-
-cur = conn.cursor()
-
 brand_name = pns_df['brand_name'].tolist() 
 product_name = pns_df['product_name'].tolist() 
 quanity = pns_df['quantity'].tolist()  
