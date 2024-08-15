@@ -2,9 +2,9 @@
 import psycopg2
 
 conn = psycopg2.connect(
-        host="localhost",
-        dbname="demo_test",
-        user="postgres",
+        host="",
+        dbname="",
+        user="",
         password="",
         port=5432
     )
