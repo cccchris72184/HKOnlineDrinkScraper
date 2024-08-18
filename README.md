@@ -10,6 +10,7 @@ All the scripts inside this project are written in Python. 3 libraries that need
 # Setup before using the application
 Before running all the web scrapers with the  main.py file. It is important to note that the user is required to fill in the information for the initial connection information in the create_tables.py file after that, fill in the connection information for the database created prior in the db_config.py file. 
 Here are the examples:
+<img src="inital_connection_for_database.png">
 
 
 # Future features
