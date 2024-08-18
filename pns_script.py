@@ -10,7 +10,7 @@ from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import datetime
 from datetime import date
-from db_config import conn, cur
+from db_config import create_connection
 import numpy as np
 import re
 import time
@@ -256,6 +256,7 @@ for product_info in total_product_info_list:
     })
 
 pns_df = pd.DataFrame(product_data)
+
 # data cleaning process inside the dataframe
 pns_df['country'] = pns_df['country'].apply(data_cleaning_country_for_df)
 pns_df['rating'] = pns_df['rating'].astype(float)
@@ -269,6 +270,21 @@ pns_df['date'] =  pd.to_datetime(today_date)
 pns_df.to_csv('pns_df{today_date}.csv', index=False)
 
 # start loading data into database
+today = date.today().strftime('%Y-%m-%d')
+today = pd.to_datetime(today)
+conn, cur = create_connection()
+
+try:
+    query = "INSERT INTO dates (scrap_date) VALUES (%s) ON CONFLICT (scrap_date) DO NOTHING;"
+    cur.execute(query, (today,))
+    conn.commit()
+    print("Date successfully inserted into the database.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+finally:
+    conn.close()
+    cur.close()
+
 brand_name = pns_df['brand_name'].tolist() 
 product_name = pns_df['product_name'].tolist() 
 quanity = pns_df['quantity'].tolist()  
@@ -283,29 +299,35 @@ promo1 = pns_df['promotion1'].tolist()
 promo2 = pns_df['promotion2'].tolist() 
 promo3 = pns_df['promotion3'].tolist() 
 category = pns_df['category'].tolist()
-date = pns_df['date'].tolist() 
+scrap_date = pns_df['date'].tolist() 
 
-fact_pns_dict_list = []
-for a, b, c, d, e, f, g, h, i, j, k, l in zip(brand_name, product_name, quanity, rating, no_of_reviews, current_price, unit_price, stock_status, promo1, promo2, promo3, date):
-    product = { 'brand_name': a, 'product_name': b, 'quantity': c, 'rating': d, 'no_of_reviews': e, 'current_price': f, 'unit_price': g, 'stock_status': h, 'promotion1': i, 'promotion2': j, 'promotion3': k, 'scrap_date': l }
-    fact_pns_dict_list.append(product)
-
-fact_query = cur.execute("""INSERT INTO fact_pns (brand_name, product_name, quantity, rating, no_of_reviews, current_price, unit_price, stock_status, promotion1, promotion2, promotion3, scrap_date)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING """)
-
-cur.executemany(fact_query, [( d["product_name"], d['brand_name'] ,d["quantity"], d["rating"], d["no_of_reviews"], d['current_price'], d['unit_price'], d['stock_status'], d['promotion1'], d['promotion2'], d['promotion3'], d['scrap_date']) for d in fact_pns_dict_list]) 
-
+conn, cur = create_connection()
 product_pns_dict_list = []
 for a, b, c, d, e in zip(brand_name, product_name, category, packing, country):
     product = {'brand_name': a, 'product_name': b, 'category': c, 'packing': d, 'country': e}
     product_pns_dict_list.append(product)
 
-product_query = cur.execute("""INSERT INTO products_pns (brand_name, product_name, category, packing, country)
-VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING """)
+product_query = """INSERT INTO products_pns (brand_name, product_name, category, packing, country)
+VALUES (%(brand_name)s, %(product_name)s, %(category)s, %(packing)s, %(country)s) ON CONFLICT DO NOTHING """
 
-cur.executemany(product_query, [( d["brand_name"], d['product_name'] ,d["category"], d["packing"], d["country"]) for d in product_pns_dict_list]) 
+cur.executemany(product_query, product_pns_dict_list) 
+
+fact_pns_dict_list = []
+for a, b, c, d, e, f, g, h, i, j, k, l in zip(brand_name, product_name, quanity, rating, no_of_reviews, current_price, unit_price, stock_status, promo1, promo2, promo3, scrap_date):
+    product = {'brand_name': a, 'product_name': b, 'quantity': c, 'rating': d, 'no_of_reviews': e, 'current_price': f, 'unit_price': g, 'stock_status': h, 'promotion1': i, 'promotion2': j, 'promotion3': k, 'scrap_date': l}
+    fact_pns_dict_list.append(product)
+
+fact_query = """
+    INSERT INTO fact_pns (brand_name, product_name, quantity, rating, no_of_reviews, current_price, unit_price, stock_status, promotion1, promotion2, promotion3, scrap_date)
+    VALUES (%(brand_name)s, %(product_name)s, %(quantity)s, %(rating)s, %(no_of_reviews)s, %(current_price)s, %(unit_price)s, %(stock_status)s, %(promotion1)s, %(promotion2)s, %(promotion3)s, %(scrap_date)s)
+    ON CONFLICT DO NOTHING
+"""
+
+cur.executemany(fact_query, fact_pns_dict_list)
+
+
 conn.commit()
-conn.close()
 cur.close()
+conn.close()
 
 

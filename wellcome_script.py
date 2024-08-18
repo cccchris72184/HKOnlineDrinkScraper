@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import datetime
 from datetime import date
-from db_config import conn, cur
+from db_config import create_connection
 import numpy as np
 import re
 import time
@@ -211,6 +211,22 @@ csv_name = 'wellcome_{}.csv'.format(current_day)
 well_df.to_csv(csv_name, index=False)
 
 # loading data into sql database
+today = date.today().strftime('%Y-%m-%d')
+today = pd.to_datetime(today)
+conn, cur = create_connection()
+
+try:
+    query = "INSERT INTO dates (scrap_date) VALUES (%s) ON CONFLICT (scrap_date) DO NOTHING;"
+    cur.execute(query, (today,))
+    conn.commit()
+    print("Date successfully inserted into the database.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+finally:
+    conn.close()
+    cur.close()
+
+    
 product_name = well_df['product_name'].tolist()
 brand_name = well_df['brand_name'].tolist()
 packing = well_df['packing'].tolist()
@@ -223,7 +239,7 @@ discount_3 = well_df['discount_3'].tolist()
 scrap_date = well_df['date'].tolist()
 
 products_well_dict_list = []
-
+conn, cur = create_connection()
 for a, b, c, d in zip(brand_name, product_name, packing, country):
     product = {'brand_name': a, 'product_name': b, 'packing': c, 'country': d}
     products_well_dict_list.append(product)
@@ -243,11 +259,10 @@ insert_query = """INSERT INTO fact_well (product_name, current_price, unit_price
 VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT
 DO NOTHING """
 
-cur.executemany(insert_query, [(d['product_name'], d['current_price'], d['unit_price'], d['discount_1'], d['discount_2'], d['discount_3'], d['scrape_date']) for d in fact_well_dict_list])
+cur.executemany(insert_query, [(d['product_name'], d['current_price'], d['unit_price'], d['discount_1'], d['discount_2'], d['discount_3'], d['scrap_date']) for d in fact_well_dict_list])
 conn.commit()
-conn.close()
 cur.close()
-
+conn.close()
 
 
 

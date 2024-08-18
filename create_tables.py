@@ -1,7 +1,30 @@
 import psycopg2
-from db_config import conn, cur
+from psycopg2 import sql
 
-# create all tables
+# create database
+init_conn = psycopg2.connect(
+        host="localhost",
+        dbname="postgres",
+        user="postgres",
+        password="",
+        port=5432
+    )
+
+init_conn.autocommit = True
+init_cur = init_conn.cursor()
+init_cur.execute("SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s", ('hk_drinks',))
+exists = init_cur.fetchone()
+
+if not exists:
+    init_cur.execute("CREATE DATABASE hk_drinks")
+
+init_cur.close()
+init_conn.close()
+
+
+from db_config import create_connection
+conn, cur = create_connection()
+# create all tables in the database
 tables = dict()
 
 tables['dates'] = """
@@ -37,8 +60,8 @@ tables['fact_well'] = """
     )
 """
 
-tables['product_pns'] = """
-    CREATE TABLE IF NOT EXISTS product_pns (
+tables['products_pns'] = """
+    CREATE TABLE IF NOT EXISTS products_pns (
         brand_name VARCHAR(100),
         product_name VARCHAR(100),
         category VARCHAR(100),
@@ -61,10 +84,9 @@ tables['fact_pns'] = """
         promotion1 VARCHAR(100),
         promotion2 VARCHAR(100),
         promotion3 VARCHAR(100),
-        packing VARCHAR(50),
         scrap_date TIMESTAMP,
         PRIMARY KEY(product_name, scrap_date),
-        FOREIGN KEY (product_name) REFERENCES product_pns (product_name),
+        FOREIGN KEY (product_name) REFERENCES products_pns (product_name),
         FOREIGN KEY (scrap_date) REFERENCES dates (scrap_date)
     )
 """

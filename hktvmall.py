@@ -5,8 +5,9 @@ import pandas as pd
 import json
 import re
 import psycopg2
-from db_config import conn, cur
+from db_config import create_connection
 import time
+from datetime import date
 from datetime import datetime
 
 # scraping data from HKTVmall, first by selenium to find out how many page for requests to get
@@ -102,6 +103,21 @@ df['scrap_date'] = pd.to_datetime(current_date)
 df = df.drop_duplicates(subset=['code', 'storeCode'], keep='first')
 
 # loading data into sql
+today = date.today().strftime('%Y-%m-%d')
+today = pd.to_datetime(today)
+conn, cur = create_connection()
+try:
+    query = "INSERT INTO dates (scrap_date) VALUES (%s) ON CONFLICT (scrap_date) DO NOTHING;"
+    cur.execute(query, (today,))
+    conn.commit()
+    print("Date successfully inserted into the database.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+finally:
+    conn.close()
+    cur.close()
+
+conn, cur = create_connection()
 product_id = df["code"].tolist()
 product_name = df["name"].tolist()
 brand_name = df["brandName"].tolist()
@@ -146,6 +162,7 @@ no_of_reviews = df["numberOfReviews"].tolist()
 quantity = df["salesVolume"].tolist()
 scrap_date = df["scrap_date"].tolist()
 
+
 fact1_hktv_dict_list = []
 for a, b, c, d, e, f, g, h in zip(product_id, unit_price, current_price, promotion_text, rating, no_of_reviews, quantity, scrap_date):
     product = { 'product_id': a, 'unit_price': b, 'current_price': c, 'promotion_text': d, 'rating': e, 'no_of_reviews': f, 'quantity': g, 'scrap_date': h}
@@ -174,7 +191,6 @@ insert_query = """
 
 """
 cur.executemany(insert_query, [(d["product_id"], d["store_id"]) for d in store23_hktv_dict_list])
-
 conn.commit()
 cur.close()
 conn.close()
