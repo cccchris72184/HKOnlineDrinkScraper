@@ -19,9 +19,6 @@ After the database creation in create_tables.py file. The user is reminded that 
 
 <img src="database_connection.png">
 
-# DataBase Design
-
-
 # Future features
 1. Decrease the run time for the application by running 3 scripts concurrently
 2. Further improvement and update for the code to make the application more stable
