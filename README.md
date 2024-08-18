@@ -10,7 +10,16 @@ All the scripts inside this project are written in Python. 3 libraries that need
 # Setup before using the application
 Before running all the web scrapers with the  main.py file. It is important to note that the user is required to fill in the information for the initial connection information in the create_tables.py file after that, fill in the connection information for the database created prior in the db_config.py file. 
 Here are the examples:
+
 <img src="inital_connection_for_database.png">
+
+With all the connection information set to default, we create an instance to connect to the user's PostgreSQL. Then, in the create_tables.py script, the script will first create a database called hk_drinks in the user's local server and then create all the required tables.
+
+After the database creation in create_tables.py file. The user is reminded that once all the tables are successfully created, they need to move to db_config.py to fill in the connection information for the database created above.
+
+<img src="database_connection.png">
+
+# DataBase Design
 
 
 # Future features
