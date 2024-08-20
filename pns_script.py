@@ -185,15 +185,15 @@ def convert_stock_status(status):
         status = False
     return status
 
-# main web scriping script
-get_product_link(filtered_category_links[0:1])
+# main web scraping script
+get_product_link(filtered_category_links)
 for link in product_link:
     scrape_products(link)
     get_product_info(link)
 
 
 # after getting the product info, process to clean up the data
-# standardize all to 13 column
+# standardize all to 13 columns
 for product_info_list in total_product_info_list:
     if len(product_info_list) == 11:
         product_info_list.insert(9, None)
